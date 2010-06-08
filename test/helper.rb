@@ -40,17 +40,23 @@ end
 
 
 module TestHelper
-  TESTDIR = File.dirname(__FILE__)
-  DATADIR = File.join(TESTDIR, 'data')
-  TMPDIR = File.join(TESTDIR, 'tmp')
+  TESTDIR = File.dirname(__FILE__) unless const_defined?('TESTDIR')
+  DATADIR = File.join(TESTDIR, 'data') unless const_defined?('DATADIR')
+  TMPDIR = File.join(TESTDIR, 'tmp') unless const_defined?('TMPDIR')
   
   def fixture(name)
     File.join(DATADIR, name)
   end
   
-  def tempfile(name)
-    name.gsub!(/[^\w]+/, '_')
-    Tempfile.new(name, TMPDIR)
+  def tempfile(name, contents = nil)
+    name.gsub!(/[^\w]+/, '_') if name
+    tmpfile = Tempfile.new(name, TMPDIR)
+    if contents
+      tmpfile.print(contents)
+      tmpfile.close
+      tmpfile.open
+    end
+    tmpfile
   end
 end
 
