@@ -25,23 +25,17 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-require 'test/testbase'
+require 'helper'
 require 'rmail/parser'
 require 'rmail/serialize'
 
-class TestRMailTransparency < TestBase
-  def do_file(file)
-    full_name = data_filename(file)
-    message1 = data_as_file(file) { |f|
-      RMail::Parser.new.parse(f)
-    }
-    scratch_base = file.gsub(/[^\w]/, '-')
-    scratch_name = scratch_filename(scratch_base)
-    message2 = File.open(scratch_name, "w+") { |f|
-      RMail::Serialize.new(f).serialize(message1)
-      f.seek(0)
-      RMail::Parser.new.parse(f)
-    }
+class TestRMailTransparency < Test::Unit::TestCase
+  include TestHelper
+
+  def do_file(filename)
+    message1 = RMail::Parser.new.parse(open(fixture(filename)))
+    message2 = RMail::Parser.new.parse(message1.to_s)
+
     if message1 != message2
       puts "-" * 70
       pp message1
@@ -49,12 +43,11 @@ class TestRMailTransparency < TestBase
       pp message2
       puts "-" * 70
     end
-    assert(FileUtils.compare_file(full_name, scratch_name),
-           "parse->serialize failure transparency #{file}")
-    assert_equal(message1, message2,
-                 "parse->serialize->parse transparency failure #{file}")
+    assert_equal(message1, message2, "parse->serialize->parse transparency failure #{filename}")
   end
 
+  ### TODO: Wow, this is stupid redundant. Generate these.
+  
   # Test that all our various input files get formatted on output the
   # same way they came in.
   def test_transparency_simple_mime
@@ -103,3 +96,4 @@ class TestRMailTransparency < TestBase
     do_file('transparency/absolute.6')
   end
 end
+
