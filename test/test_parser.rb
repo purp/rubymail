@@ -25,10 +25,11 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-require 'test/testbase'
+require 'helper'
 require 'rmail/parser'
 
-class TestRMailStreamParser < TestBase
+class TestRMailStreamParser < Test::Unit::TestCase
+  include TestHelper
 
   class RecordingStreamHandler
     def initialize(history)
@@ -40,21 +41,19 @@ class TestRMailStreamParser < TestBase
   end
 
   def test_stream_parser_simple
-    string_msg = \
-'From matt@lickey.com  Mon Dec 24 00:00:06 2001
+    datafile = tempfile(nil, 'From matt@lickey.com  Mon Dec 24 00:00:06 2001
 From:    matt@example.net
 To:   matt@example.com
 Subject: test message
 
 message body
 has two lines
-'
+')
 
-    string_as_file(string_msg) { |f|
-      RMail::StreamParser.parse(f, RMail::StreamHandler.new)
-      f.rewind
+      RMail::StreamParser.parse(datafile, RMail::StreamHandler.new)
+      datafile.rewind
       history = []
-      RMail::StreamParser.parse(f, RecordingStreamHandler.new(history))
+      RMail::StreamParser.parse(datafile, RecordingStreamHandler.new(history))
       expected = [
         [:mbox_from, "From matt@lickey.com  Mon Dec 24 00:00:06 2001"],
         [:header_field, "From:    matt@example.net", "From",
@@ -65,12 +64,10 @@ has two lines
         [:body_chunk, "message body\nhas two lines\n"],
         [:body_end]]
       assert_equal(expected, history)
-    }
   end
 
   def test_stream_parser_multipart
-    string_msg = \
-'Content-Type: multipart/mixed; boundary="aa"
+    datafile = tempfile(nil, 'Content-Type: multipart/mixed; boundary="aa"
 MIME-Version: 1.0
 
 preamble
@@ -80,13 +77,12 @@ Header1: hi mom
 body1
 --aa--
 epilogue
-'
+')
 
-    string_as_file(string_msg) { |f|
-      RMail::StreamParser.parse(f, RMail::StreamHandler.new)
-      f.rewind
+      RMail::StreamParser.parse(datafile, RMail::StreamHandler.new)
+      datafile.rewind
       history = []
-      RMail::StreamParser.parse(f, RecordingStreamHandler.new(history))
+      RMail::StreamParser.parse(datafile, RecordingStreamHandler.new(history))
       expected = [
         [:header_field, "Content-Type: multipart/mixed; boundary=\"aa\"",
           "Content-Type", "multipart/mixed; boundary=\"aa\""],
@@ -103,13 +99,13 @@ epilogue
         [:multipart_body_end,  ["\n--aa\n", "\n--aa--\n"], "aa"]
       ]
       assert_equal(expected, history)
-    }
   end
 
 end
 
 
-class TestRMailParser < TestBase
+class TestRMailParser < Test::Unit::TestCase
+  include TestHelper
 
   def common_test_parse(m)
     assert_instance_of(RMail::Message, m)
@@ -137,9 +133,8 @@ message body
 has two lines
     EOF
 
-    m = string_as_file(string_msg) { |f|
-      p.parse(f)
-    }
+    datafile = tempfile(nil, string_msg)
+    m = p.parse(datafile)
     common_test_parse(m)
 
     m = p.parse(string_msg)
@@ -148,7 +143,7 @@ has two lines
 
   def test_parse_simple_mime
     p = RMail::Parser.new
-    m = data_as_file('parser.simple-mime') { |f|
+    m = open(fixture('parser.simple-mime')) { |f|
       p.parse(f)
     }
 
@@ -196,7 +191,7 @@ It DOES end with a linebreak.
   end
 
   def test_parse_nested_simple
-    m = data_as_file('parser.nested-simple') { |f|
+    m = open(fixture('parser.nested-simple')) { |f|
       RMail::Parser.new.parse(f)
     }
     assert_nil(m.preamble)
@@ -206,7 +201,7 @@ It DOES end with a linebreak.
   end
 
   def test_parser_nested_simple2
-    m = data_as_file('parser.nested-simple2') { |f|
+    m = open(fixture('parser.nested-simple2')) { |f|
       RMail::Parser.new.parse(f)
     }
 
@@ -217,7 +212,7 @@ It DOES end with a linebreak.
   end
 
   def test_parser_nested_simple3
-    m = data_as_file('parser.nested-simple3') { |f|
+    m = open(fixture('parser.nested-simple3')) { |f|
       RMail::Parser.new.parse(f)
     }
 
@@ -229,7 +224,7 @@ It DOES end with a linebreak.
 
   def test_parse_nested_multipart
     p = RMail::Parser.new
-    m = data_as_file('parser.nested-multipart') { |f|
+    m = open(fixture('parser.nested-multipart')) { |f|
       p.parse(f)
     }
 
@@ -329,9 +324,9 @@ It DOES end with a linebreak.
 
   def test_parse_badmime1
     p = RMail::Parser.new
-    1.upto(File.stat(data_filename('parser.badmime1')).size + 10) { |size|
+    1.upto(File.stat(fixture('parser.badmime1')).size + 10) { |size|
       m = nil
-      data_as_file('parser.badmime1') do |f|
+      open(fixture('parser.badmime1')) do |f|
         p.chunk_size = size
         assert_nothing_raised("failed for chunk size #{size.to_s}") {
           m = p.parse(f)
@@ -343,9 +338,9 @@ It DOES end with a linebreak.
 
   def test_parse_badmime2
     p = RMail::Parser.new
-    1.upto(File.stat(data_filename('parser.badmime2')).size + 10) { |size|
+    1.upto(File.stat(fixture('parser.badmime2')).size + 10) { |size|
       m = nil
-      data_as_file('parser.badmime2') do |f|
+      open(fixture('parser.badmime2')) do |f|
         p.chunk_size = size
         assert_nothing_raised("failed for chunk size #{size.to_s}") {
           m = p.parse(f)
@@ -356,7 +351,7 @@ It DOES end with a linebreak.
   end
 
   def test_parse_multipart_01
-    m = data_as_file('parser/multipart.1') do |f|
+    m = open(fixture('parser/multipart.1')) do |f|
       RMail::Parser.new.parse(f)
     end
 
@@ -379,7 +374,7 @@ It DOES end with a linebreak.
   end
 
   def test_parse_multipart_02
-    m = data_as_file('parser/multipart.2') do |f|
+    m = open(fixture('parser/multipart.2')) do |f|
       RMail::Parser.new.parse(f)
     end
 
@@ -401,7 +396,7 @@ It DOES end with a linebreak.
   end
 
   def test_parse_multipart_03
-    m = data_as_file('parser/multipart.3') do |f|
+    m = open(fixture('parser/multipart.3')) do |f|
       RMail::Parser.new.parse(f)
     end
 
@@ -423,7 +418,7 @@ It DOES end with a linebreak.
   end
 
   def test_parse_multipart_04
-    m = data_as_file('parser/multipart.4') do |f|
+    m = open(fixture('parser/multipart.4')) do |f|
       RMail::Parser.new.parse(f)
     end
 
@@ -437,7 +432,7 @@ It DOES end with a linebreak.
   end
 
   def test_parse_multipart_05
-    m = data_as_file('parser/multipart.5') do |f|
+    m = open(fixture('parser/multipart.5')) do |f|
       RMail::Parser.new.parse(f)
     end
 
@@ -451,7 +446,7 @@ It DOES end with a linebreak.
   end
 
   def test_parse_multipart_06
-    m = data_as_file('parser/multipart.6') do |f|
+    m = open(fixture('parser/multipart.6')) do |f|
       RMail::Parser.new.parse(f)
     end
 
@@ -465,7 +460,7 @@ It DOES end with a linebreak.
   end
 
   def test_parse_multipart_07
-    m = data_as_file('parser/multipart.7') do |f|
+    m = open(fixture('parser/multipart.7')) do |f|
       RMail::Parser.new.parse(f)
     end
 
@@ -479,7 +474,7 @@ It DOES end with a linebreak.
   end
 
   def test_parse_multipart_08
-    m = data_as_file('parser/multipart.8') do |f|
+    m = open(fixture('parser/multipart.8')) do |f|
       RMail::Parser.new.parse(f)
     end
 
@@ -493,7 +488,7 @@ It DOES end with a linebreak.
   end
 
   def test_parse_multipart_09
-    m = data_as_file('parser/multipart.9') do |f|
+    m = open(fixture('parser/multipart.9')) do |f|
       RMail::Parser.new.parse(f)
     end
 
@@ -507,7 +502,7 @@ It DOES end with a linebreak.
   end
 
   def test_parse_multipart_10
-    m = data_as_file('parser/multipart.10') do |f|
+    m = open(fixture('parser/multipart.10')) do |f|
       RMail::Parser.new.parse(f)
     end
 
@@ -521,7 +516,7 @@ It DOES end with a linebreak.
   end
 
   def test_parse_multipart_11
-    m = data_as_file('parser/multipart.11') do |f|
+    m = open(fixture('parser/multipart.11')) do |f|
       RMail::Parser.new.parse(f)
     end
 
@@ -536,7 +531,7 @@ It DOES end with a linebreak.
   end
 
   def test_parse_multipart_12
-    m = data_as_file('parser/multipart.12') do |f|
+    m = open(fixture('parser/multipart.12')) do |f|
       RMail::Parser.new.parse(f)
     end
 
@@ -550,7 +545,7 @@ It DOES end with a linebreak.
   end
 
   def test_parse_multipart_13
-    m = data_as_file('parser/multipart.13') do |f|
+    m = open(fixture('parser/multipart.13')) do |f|
       RMail::Parser.new.parse(f)
     end
 
@@ -564,7 +559,7 @@ It DOES end with a linebreak.
   end
 
   def test_parse_multipart_14
-    m = data_as_file('parser/multipart.14') do |f|
+    m = open(fixture('parser/multipart.14')) do |f|
       RMail::Parser.new.parse(f)
     end
 
@@ -578,7 +573,7 @@ It DOES end with a linebreak.
   end
 
   def test_parse_multipart_15
-    m = data_as_file('parser/multipart.15') do |f|
+    m = open(fixture('parser/multipart.15')) do |f|
       RMail::Parser.new.parse(f)
     end
 
@@ -592,7 +587,7 @@ It DOES end with a linebreak.
   end
 
   def test_parse_multipart_16
-    m = data_as_file('parser/multipart.16') do |f|
+    m = open(fixture('parser/multipart.16')) do |f|
       RMail::Parser.new.parse(f)
     end
 
@@ -617,9 +612,7 @@ message body
 has two lines
     EOF
 
-    m = string_as_file(string_msg) { |f|
-      RMail::Parser.read(f)
-    }
+    m = RMail::Parser.read(tempfile(nil, string_msg))
     common_test_parse(m)
 
     m = RMail::Parser.read(string_msg)
@@ -630,5 +623,4 @@ has two lines
     p = RMail::Parser.new
     assert_instance_of(RMail::Parser, p)
   end
-
 end
