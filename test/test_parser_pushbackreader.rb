@@ -25,10 +25,11 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-require 'test/testbase'
+require 'helper'
 require 'rmail/mailbox/mboxreader'
 
-class TextRMailParserPushbackReader < TestBase
+class TextRMailParserPushbackReader < Test::Unit::TestCase
+  include TestHelper
 
   def test_pushback
     reader = RMail::Parser::PushbackReader.new("")
