@@ -28,10 +28,10 @@
 # Base for all the test cases, providing a default setup and teardown
 
 require 'test/unit'
-require 'rbconfig.rb'
+# require 'rbconfig.rb'
 require 'tempfile'
-require 'find'
-require 'fileutils'
+# require 'find'
+# require 'fileutils'
 
 begin
   require 'pp'
@@ -42,9 +42,15 @@ end
 module TestHelper
   TESTDIR = File.dirname(__FILE__)
   DATADIR = File.join(TESTDIR, 'data')
+  TMPDIR = File.join(TESTDIR, 'tmp')
   
   def fixture(name)
     File.join(DATADIR, name)
+  end
+  
+  def tempfile(name)
+    name.gsub!(/[^\w]+/, '_')
+    Tempfile.new(name, TMPDIR)
   end
 end
 
