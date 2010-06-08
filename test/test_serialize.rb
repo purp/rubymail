@@ -25,11 +25,15 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-require 'test/testbase'
+require 'helper'
 require 'rmail/serialize'
 require 'rmail/message'
 
-class TestRMailSerialize < TestBase
+### TODO: Be sure it serializes to disk and string the same way
+
+class TestRMailSerialize < Test::Unit::TestCase
+  include TestHelper
+  
   def test_serialize_empty
     s = RMail::Serialize.new('').serialize(RMail::Message.new)
     assert_equal("", s)
