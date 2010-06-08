@@ -25,23 +25,30 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-require 'test/testbase'
+require 'helper'
 require 'rmail/mailbox'
 
-class TestRMailMailbox < TestBase
-  def test_parse_mbox_simple
-    expected = ["From foo@bar  Wed Nov 27 12:27:32 2002\nmessage1\n",
+class TestRMailMailbox < Test::Unit::TestCase
+  include TestHelper
+  
+  def setup
+    @mbox_data = open(fixture('mbox.simple')).readlines.join
+    ### FIXME: calculate this from @mbox_data, or vice-versa
+    @expected = ["From foo@bar  Wed Nov 27 12:27:32 2002\nmessage1\n",
       "From foo@bar  Wed Nov 27 12:27:36 2002\nmessage2\n",
       "From foo@bar  Wed Nov 27 12:27:40 2002\nmessage3\n"]
-    data_as_file("mbox.simple") { |f|
-      assert_equal(expected, RMail::Mailbox::parse_mbox(f))
+  end    
+  
+  def test_parse_mbox_simple
+    assert_equal(@expected, RMail::Mailbox::parse_mbox(@mbox_data))
+  end
+  
+  def test_parse_mbox_simple_with_block
+    messages = []
+
+    RMail::Mailbox::parse_mbox(@mbox_data) { |m|
+      messages << m
     }
-    data_as_file("mbox.simple") { |f|
-      messages = []
-      RMail::Mailbox::parse_mbox(f) { |m|
-        messages << m
-      }
-      assert_equal(expected, messages)
-    }
+    assert_equal(@expected, messages)
   end
 end
