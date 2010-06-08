@@ -39,9 +39,7 @@ module RMail
   # body may either be a single String for single part messages or an
   # Array of RMail::Message objects for MIME multipart messages.
   class Message
-    attr_accessor :body
-    attr_reader :header
-    
+
     # Create a new, empty, RMail::Message.
     def initialize
       @header = RMail::Header.new
@@ -59,24 +57,45 @@ module RMail
         @body == other.body
     end
 
-    def parts
-      body.is_a?(Array) ? body : [body].compact
+    # Returns the body of the message as a String or Array.
+    #
+    # If #multipart? returns true, it will be an array of
+    # RMail::Message objects.  Otherwise it will be a String.
+    #
+    # See also #header.
+    def body
+      return @body
     end
 
-    def part(index)
-      parts[index]
+    # Sets the body of the message to the given value.  It should
+    # either be a String or an Array of RMail:Message objects.
+    def body=(s)
+      @body = s
+    end
+
+    # Returns the RMail::Header object.
+    #
+    # See also #body.
+    def header()
+      return @header
     end
 
     # Return true if the message consists of multiple parts.
     def multipart?
-      parts.size > 1
+      @body.is_a?(Array)
     end
 
     # Add a part to the message.  After this message is called, the
     # #multipart? method will return true and the #body method will
     # #return an array of parts.
     def add_part(part)
-      body = parts.dup << part
+      if @body.nil?
+	@body = [part]
+      elsif @body.is_a?(Array)
+        @body.push(part)
+      else
+	@body = [@body, part]
+      end
     end
 
     # Decode the body of this message.
@@ -99,6 +118,13 @@ module RMail
       else
         @body
       end
+    end
+
+    # Get the indicated part from a multipart message.
+    def part(i)
+      raise TypeError,
+        "Can not get part on a single part message." unless multipart?
+      @body[i]
     end
 
     # Access the epilogue string for this message.  The epilogue
