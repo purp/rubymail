@@ -31,8 +31,9 @@ module RMail
 
   # The RMail::Mailbox module contains a few methods that are useful
   # for working with mailboxes.
-  module Mailbox
-
+  class Mailbox
+    attr_reader :messages
+    attr_accessor :filename, :line_separator
     class << self
 
       # Parse a Unix mbox style mailbox.  These mailboxes searate
@@ -57,6 +58,21 @@ module RMail
         return block_given? ? nil : retval
       end
 
+    end
+    
+    def initialize(filename, line_separator = $/)
+      @filename = filename
+      @line_separator = line_separator
+      @messages = []
+    end
+    
+    def parse(collapse_single_part = false)
+      raise "Can't read mbox file '#{filename}'" unless filename && File.readable?(filename)
+      RMail::Mailbox.parse_mbox(open(filename), line_separator) do |raw_msg|
+        msg = RMail::Parser.read(raw_msg)
+        msg.body = msg.parts.first if collapse_single_part && msg.parts.size == 1
+        @messages << msg
+      end
     end
   end
 end

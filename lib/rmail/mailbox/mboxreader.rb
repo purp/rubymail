@@ -29,7 +29,7 @@
 require 'rmail/parser/pushbackreader'
 
 module RMail
-  module Mailbox
+  class Mailbox
 
     # Class that can parse Unix mbox style mailboxes.  These mailboxes
     # separate individual messages with a line beginning with the
