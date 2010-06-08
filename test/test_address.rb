@@ -25,10 +25,11 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-require 'test/testbase'
+require 'helper'
 require 'rmail/address'
 
-class TestRMailAddress < TestBase
+class TestRMailAddress < Test::Unit::TestCase
+  include TestHelper
 
   def domain_optional
     # Set to true for tests that include addresses without a domain
@@ -105,7 +106,7 @@ class TestRMailAddress < TestBase
     expected_results = testcase[1]
     assert_instance_of(Array, expected_results)
     assert_equal(expected_results.length, results.length,
-		 "results array wrong length, got #{results.inspect}")
+		 "results array wrong length, got #{results.inspect} instead of #{expected_results.inspect}")
 
     results.each_with_index { |address, i|
       assert_instance_of(Hash, expected_results[i])
@@ -806,7 +807,7 @@ class TestRMailAddress < TestBase
         } ] ]
   end
 
-  def test_invalid_addresses()
+  def test_invalid_addresses
     # The display name isn't encoded -- bad, but we parse it.
     validate_case\
     ["\322\315\322 \312\353\363\341 <bar@foo.invalid>",
@@ -821,7 +822,6 @@ class TestRMailAddress < TestBase
   end
 
   def test_domain_literal
-
     validate_case\
     ['test@[domain]',
       [ { :name => nil,

@@ -26,15 +26,12 @@
 #
 
 require 'rmail/message'
-require 'test/testbase'
+require 'helper'
 
-class TestRMailMessage < TestBase
+class TestRMailMessage < Test::Unit::TestCase
+  include TestHelper
 
   def setup
-    super
-
-    @the_mail_file = File.join(scratch_dir, "mail_file")
-
     @the_mail = %q{From: somedude@example.com
 To: someotherdude@example.com
 Subject: this is some mail
@@ -43,15 +40,12 @@ First body line.
 
 Second body line.
 }
-
-    File.open(@the_mail_file, "w") { |file|
-      file.print(@the_mail)
-    }
+  
+    @the_mail_file = tempfile('mail_file', @the_mail)
 
     # Test reading in a mail file that has a bad header.  This makes
     # sure we consider the message header to be everything up to the
     # first blank line.
-    @the_mail_file_2 = File.join(scratch_dir, "mail_file_2")
     @the_mail_2 = %q{From: somedude@example.com
 To: someotherdude@example.com
 this is not a valid header
@@ -61,9 +55,7 @@ First body line
 
 Second body line
 }
-    File.open(@the_mail_file_2, "w") { |file|
-      file.print(@the_mail_2)
-    }
+    @the_mail_file_2 = tempfile('mail_file_2', @the_mail_2)
   end
 
   def verify_message_interface(message)
@@ -76,7 +68,6 @@ Second body line
   end
 
   def test_initialize
-
     # Make sure an empty message actually is empty
     message = RMail::Message.new
     verify_message_interface(message)
@@ -116,7 +107,7 @@ Second body line
     assert(m3 == m4)
 
     m1.body = 'the other body'
-    assert(m3 != m4)
+    assert(m3 != m4, "m3 body: #{m3.body.inspect}\n\nm4 body: #{m4.body.inspect}")
   end
 
   def test_multipart?

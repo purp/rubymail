@@ -25,10 +25,11 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-require 'test/testbase'
+require 'helper'
 require 'rmail/header'
 
-class TestRMailHeader < TestBase
+class TestRMailHeader < Test::Unit::TestCase
+  include TestHelper
 
   def test_AREF # '[]'
     h = RMail::Header.new
